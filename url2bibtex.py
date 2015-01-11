@@ -62,6 +62,25 @@ def bibtex(urldata):
     bibtex.append('}')
     return bibtex
 
+def getTitle(url):
+    """
+    Get the title of a website.
+
+    :param url: URL to query
+    :type url: str
+    :returns: str
+    """
+    from bs4 import BeautifulSoup
+
+    r = requests.get(url)
+    if 200 != r.status_code:
+        return ''
+    soup = BeautifulSoup(r.text)
+    t = soup.find_all("title")
+    if 1 != len(t):
+        return ''
+    return t[0]
+
 urldata = {'url': sys.argv[1],
            'urldate': str(datetime.date.today()),
            'year': str(datetime.date.today().year)}
@@ -77,5 +96,6 @@ if 0 != len(wbdata):
     urldata['snapshot date'] = datestring
     urldata['snapshot url'] = wbdata['url']
 
+print(getTitle(urldata['url']))
 for line in bibtex(urldata):
     print(line)
