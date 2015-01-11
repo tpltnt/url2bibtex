@@ -15,21 +15,40 @@ def getWaybackData(url):
     """
     if 0 == len(url):
         return {}
+
     p = {'url': url}
     r = requests.get('https://archive.org/wayback/available', params=p)
-    print(r.url)
     if 200 == r.status_code:
         wb = r.json()
-        if 'archived_snapshots' not in wb.keys():
-            return {}
-        else:
+        try:
             wb = wb['archived_snapshots']
-        if 0 == len(wb):
+            if 0 == len(wb):
+                return {}
+            wb = wb['closest']
+            if not wb['available']:
+                return {}
+            if '200' != wb['status']:
+                return {}
+            return {
+                'url': wb['url'],
+                'timestamp': wb['timestamp']
+            }
+        except KeyError:
             return {}
     return {}
 
 urldata = {'urldate': str(datetime.date.today()), 'year': str(datetime.date.today().year)}
-print(getWaybackData(sys.argv[1]))
+wbdata = getWaybackData(sys.argv[1])
+if 0 != len(wbdata):
+    # create ISO timestamp string
+    datestring = wbdata['timestamp'][:4] \
+                 + '-' + wbdata['timestamp'][4:6] \
+                 + '-' + wbdata['timestamp'][6:8] \
+                 + 'T' + wbdata['timestamp'][8:10] \
+                 + ':' + wbdata['timestamp'][10:12] \
+                 + ':' + wbdata['timestamp'][12:14]
+    urldata['snapshot date'] = datestring
+    urldata['snapshot url'] = wbdata['url']
 print(urldata)
 """
 @ONLINE{bla_foo:2023:Online,
@@ -39,5 +58,6 @@ month = jun,
 year = {2023},
 url = {http://www.bla.foo},
 urldate = {2023-05-42}
+note = {Internet Archive Wayback Machine: \url{urldata['snapshot url']}, as of urldata['snapshot date']}
 }
 """
