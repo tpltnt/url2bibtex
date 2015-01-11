@@ -16,7 +16,7 @@ def getWaybackData(url):
     if 0 == len(url):
         return {}
 
-    p = {'url': url}
+    p = {'url': stripSchema(url)}
     r = requests.get('https://archive.org/wayback/available', params=p)
     if 200 == r.status_code:
         wb = r.json()
@@ -63,6 +63,20 @@ def bibtex(urldata):
     bibtex.append('}')
     return bibtex
 
+def stripSchema(url):
+    """
+    Strip the schema from the given URL.
+
+    :param url: URL to strip
+    :type url: str
+    :return: str
+    """
+    if 'https' == url[:5]:
+        return url[8:]
+    if 'http' == url[:4]:
+        return url[7:]
+    return url
+
 def getTitle(url):
     """
     Get the title of a website.
@@ -91,9 +105,15 @@ def getTitle(url):
         return ''
     if isinstance(t, list):
         return ''
-    return t[0].replace('title>','').replace('<','')[:-1]
+    print(t)
+    return str(t[0]).replace('<title>', '').replace('</title>', '')
 
-urldata = {'url': sys.argv[1],
+testurl = sys.argv[1]
+if 'http' != testurl[:4]:
+    print("did you forget 'http(s)'?")
+    sys.exit(3)
+
+urldata = {'url': testurl,
            'urldate': str(datetime.date.today()),
            'year': str(datetime.date.today().year)}
 wbdata = getWaybackData(sys.argv[1])
