@@ -15,7 +15,9 @@ def getWaybackData(url):
     """
     if 0 == len(url):
         return {}
-    r = requests.get('http://archive.org/wayback/available?url=' + url)
+    p = {'url': url}
+    r = requests.get('https://archive.org/wayback/available', params=p)
+    print(r.url)
     if 200 == r.status_code:
         wb = r.json()
         if 'archived_snapshots' not in wb.keys():
@@ -27,7 +29,7 @@ def getWaybackData(url):
     return {}
 
 urldata = {'urldate': str(datetime.date.today()), 'year': str(datetime.date.today().year)}
-print(getWaybackData(sys.argv[0]))
+print(getWaybackData(sys.argv[1]))
 print(urldata)
 """
 @ONLINE{bla_foo:2023:Online,
