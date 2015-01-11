@@ -37,7 +37,34 @@ def getWaybackData(url):
             return {}
     return {}
 
-urldata = {'urldate': str(datetime.date.today()), 'year': str(datetime.date.today().year)}
+def bibtex(urldata):
+    """
+    Create an array with all the data for the bibTex file.
+
+    :param urldata: all the data collected
+    :type urldata: dict
+    :returns: list
+    """
+    bibtex = []
+    bibtex.append('@ONLINE{' + urldata['url'].replace('.', '_') \
+                  + ':' + urldata['year'] + ':Online')
+    bibtex.append('\tauthor = {},')
+    bibtex.append('\ttitle = {this is a test},')
+    bibtex.append('\tmonth = jun,')
+    bibtex.append('\tyear = {' + urldata['year'] + '},')
+    bibtex.append('\turl = {' + urldata['url'] + '},')
+    bibtex.append('\turldate = {' + urldata['urldate'] + '}')
+    if 'snapshot url' in urldata.keys():
+        bibtex[-1] += ','
+        bibtex.append('\tnote = {Internet Archive Wayback Machine: \url{' \
+                      + urldata['snapshot url'] + '}, as of ' \
+                      + urldata['snapshot date'] + '}')
+    bibtex.append('}')
+    return bibtex
+
+urldata = {'url': sys.argv[1],
+           'urldate': str(datetime.date.today()),
+           'year': str(datetime.date.today().year)}
 wbdata = getWaybackData(sys.argv[1])
 if 0 != len(wbdata):
     # create ISO timestamp string
@@ -49,15 +76,6 @@ if 0 != len(wbdata):
                  + ':' + wbdata['timestamp'][12:14]
     urldata['snapshot date'] = datestring
     urldata['snapshot url'] = wbdata['url']
-print(urldata)
-"""
-@ONLINE{bla_foo:2023:Online,
-author = {Doe, John},
-title = {this is a test},
-month = jun,
-year = {2023},
-url = {http://www.bla.foo},
-urldate = {2023-05-42}
-note = {Internet Archive Wayback Machine: \url{urldata['snapshot url']}, as of urldata['snapshot date']}
-}
-"""
+
+for line in bibtex(urldata):
+    print(line)
