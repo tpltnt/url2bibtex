@@ -88,6 +88,8 @@ def getTitle(url):
     t = soup.find_all("title")
     if 1 != len(t):
         return ''
+    if isinstance(t, list):
+        return ''
     return t[0].replace('title>','').replace('<','')[:-1]
 
 urldata = {'url': sys.argv[1],
