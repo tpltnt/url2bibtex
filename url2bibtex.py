@@ -101,9 +101,12 @@ def getTitle(url):
         return ''
     soup = BeautifulSoup(r.text)
     t = soup.find_all("title")
-    if 1 != len(t):
-        return ''
-    return str(t[0]).replace('<title>', '').replace('</title>', '')
+    if 1 == len(t):
+        return str(t[0]).replace('<title>', '').replace('</title>', '')
+    soup.find_all("p", "title")
+    if 1 == len(t):
+        return str(t[0]).replace('<p class="title">', '').replace('</p>', '')
+    return ''
 
 testurl = sys.argv[1]
 if 'http' != testurl[:4]:
