@@ -46,8 +46,10 @@ def bibtex(urldata):
     :returns: list
     """
     bibtex = []
-    bibtex.append('@ONLINE{' + urldata['url'].replace('.', '_') \
-                  + ':' + urldata['year'] + ':Online')
+    url = stripSchema(urldata['url']).replace('.', '_')
+    if '/' == url[-1]:
+        url = url[:-1]
+    bibtex.append('@ONLINE{' + url + ':' + urldata['year'] + ':Online')
     bibtex.append('\tauthor = {},')
     if 'title' in urldata.keys():
         bibtex.append('\ttitle = {' + urldata['title'] + '},')
