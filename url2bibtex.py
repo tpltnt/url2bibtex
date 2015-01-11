@@ -72,14 +72,23 @@ def getTitle(url):
     """
     from bs4 import BeautifulSoup
 
-    r = requests.get(url)
+    try:
+        r = requests.get(url)
+    except requests.exceptions.MissingSchema:
+        try:
+            r = requests.get('http://' + url)
+        except requests.exceptions.MissingSchema:
+            try:
+                r = requests.get('https://' + url)
+            except requests.exceptions.MissingSchema:
+                return ''
     if 200 != r.status_code:
         return ''
     soup = BeautifulSoup(r.text)
     t = soup.find_all("title")
     if 1 != len(t):
         return ''
-    return t[0]
+    return t[0].replace('title>','').replace('<','')[:-1]
 
 urldata = {'url': sys.argv[1],
            'urldate': str(datetime.date.today()),
