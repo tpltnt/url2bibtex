@@ -49,7 +49,8 @@ def bibtex(urldata):
     bibtex.append('@ONLINE{' + urldata['url'].replace('.', '_') \
                   + ':' + urldata['year'] + ':Online')
     bibtex.append('\tauthor = {},')
-    bibtex.append('\ttitle = {this is a test},')
+    if 'title' in urldata.keys():
+        bibtex.append('\ttitle = {' + urldata['title'] + '},')
     bibtex.append('\tmonth = jun,')
     bibtex.append('\tyear = {' + urldata['year'] + '},')
     bibtex.append('\turl = {' + urldata['url'] + '},')
@@ -107,6 +108,9 @@ if 0 != len(wbdata):
     urldata['snapshot date'] = datestring
     urldata['snapshot url'] = wbdata['url']
 
-print(getTitle(urldata['url']))
+title = getTitle(urldata['url'])
+if 0 != len(title):
+    urldata['title'] = title
+
 for line in bibtex(urldata):
     print(line)
