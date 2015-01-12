@@ -53,15 +53,28 @@ def getWikipediaData(url):
     if 200 == r.status_code:
         soup = BeautifulSoup(r.text)
         quotepath = ''
+        historpath = ''
         for a in soup.find_all("a"):
             if 'href' in a.attrs:
                 if '/w/index.php?title=Special:CiteThisPage' == a['href'][:39]:
                     quotepath = a['href']
+                if '&action=history' == a['href'][-15:]:
+                    historypath = a['href']
+
         chunks = r.url.split('/')
         citeurl = chunks[0] + '//' + chunks[2] + quotepath
         citeurl = citeurl.replace('Special:CiteThisPage&page=', '')
         citeurl = citeurl.replace('&id=', '&oldid=')
-        return {'url': citeurl, 'author': 'Wikipedia'}
+        chunks = r.url.split('/')
+        historyurl = chunks[0] + '//' + chunks[2] + historypath
+
+        year = ''
+        r = requests.get(historyurl)
+        if 200 == r.status_code:
+            soup = BeautifulSoup(r.text)
+            hdate = soup.find("a", class_='mw-changeslist-date')
+            year = str(hdate).split('">')[1].split(' ')[3][:4]
+        return {'url': citeurl, 'author': 'Wikipedia', 'year': year}
     return {}
 
 def bibtex(urldata):
@@ -161,6 +174,7 @@ if -1 != urldata['url'].find('wikipedia.org'):
     wpdata = getWikipediaData(urldata['url'])
     urldata['author'] = wpdata['author']
     urldata['url'] = wpdata['url']
+    urldata['year'] = wpdata['year']
 
 title = getTitle(urldata['url'])
 if 0 != len(title):
