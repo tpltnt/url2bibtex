@@ -158,7 +158,9 @@ if 0 != len(wbdata):
     urldata['snapshot url'] = wbdata['url']
 
 if -1 != urldata['url'].find('wikipedia.org'):
-    print(getWikipediaData(urldata['url']))
+    wpdata = getWikipediaData(urldata['url'])
+    urldata['author'] = wpdata['author']
+    urldata['url'] = wpdata['url']
 
 title = getTitle(urldata['url'])
 if 0 != len(title):
