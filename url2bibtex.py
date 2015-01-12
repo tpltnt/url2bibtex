@@ -164,7 +164,7 @@ if -1 != urldata['url'].find('wikipedia.org'):
 
 title = getTitle(urldata['url'])
 if 0 != len(title):
-    urldata['title'] = title
+    urldata['title'] = title.replace(',', '{,}')
 
 for line in bibtex(urldata):
     print(line)
