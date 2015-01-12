@@ -52,8 +52,17 @@ def getWikipediaData(url):
     r = requests.get(url)
     if 200 == r.status_code:
         soup = BeautifulSoup(r.text)
+        quotepath = ''
         for a in soup.find_all("a"):
-            print(a)
+            if 'href' in a.attrs:
+                if '/w/index.php?title=Special:CiteThisPage' == a['href'][:39]:
+                    quotepath = a['href']
+        chunks = r.url.split('/')
+        citeurl = chunks[0] + '//' + chunks[2] + quotepath
+        citeurl = citeurl.replace('Special:CiteThisPage&page=', '')
+        citeurl = citeurl.replace('&id=', '&oldid=')
+        return {'url': citeurl, 'author': 'Wikipedia'}
+    return {}
 
 def bibtex(urldata):
     """
