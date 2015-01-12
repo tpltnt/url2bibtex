@@ -45,7 +45,15 @@ def getWikipediaData(url):
     :type url: str
     :returns: dict
     """
-    pass
+    from bs4 import BeautifulSoup
+
+    if 0 == len(url):
+        return {}
+    r = requests.get(url)
+    if 200 == r.status_code:
+        soup = BeautifulSoup(r.text)
+        for a in soup.find_all("a"):
+            print(a)
 
 def bibtex(urldata):
     """
@@ -139,6 +147,9 @@ if 0 != len(wbdata):
                  + ':' + wbdata['timestamp'][12:14]
     urldata['snapshot date'] = datestring
     urldata['snapshot url'] = wbdata['url']
+
+if -1 != urldata['url'].find('wikipedia.org'):
+    print(getWikipediaData(urldata['url']))
 
 title = getTitle(urldata['url'])
 if 0 != len(title):
