@@ -37,6 +37,16 @@ def getWaybackData(url):
             return {}
     return {}
 
+def getWikipediaData(url):
+    """
+    Get data from the wikipedia if applicable.
+
+    :param url: URL to check
+    :type url: str
+    :returns: dict
+    """
+    pass
+
 def bibtex(urldata):
     """
     Create an array with all the data for the bibTex file.
