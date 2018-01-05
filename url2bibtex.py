@@ -3,6 +3,9 @@
 import requests
 import sys
 import datetime
+import argparse
+import re
+import traceback
 
 def getWaybackData(url):
     """
@@ -16,7 +19,7 @@ def getWaybackData(url):
     if 0 == len(url):
         return {}
 
-    p = {'url': stripSchema(url)}
+    p = {'url': stripSchema(url), 'verify': False}
     r = requests.get('https://archive.org/wayback/available', params=p)
     if 200 == r.status_code:
         wb = r.json()
@@ -49,9 +52,9 @@ def getWikipediaData(url):
 
     if 0 == len(url):
         return {}
-    r = requests.get(url)
+    r = requests.get(url, verify=False)
     if 200 == r.status_code:
-        soup = BeautifulSoup(r.text)
+        soup = BeautifulSoup(r.text, 'html.parser')
         quotepath = ''
         historpath = ''
         for a in soup.find_all("a"):
@@ -69,9 +72,9 @@ def getWikipediaData(url):
         historyurl = chunks[0] + '//' + chunks[2] + historypath
 
         year = ''
-        r = requests.get(historyurl)
+        r = requests.get(historyurl, verify=False)
         if 200 == r.status_code:
-            soup = BeautifulSoup(r.text)
+            soup = BeautifulSoup(r.text, 'html.parser')
             hdate = soup.find("a", class_='mw-changeslist-date')
             year = str(hdate).split('">')[1].split(' ')[3][:4]
         return {'url': citeurl, 'author': 'Wikipedia', 'year': year}
@@ -89,17 +92,27 @@ def bibtex(urldata):
     url = stripSchema(urldata['url']).replace('.', '_')
     if '/' == url[-1]:
         url = url[:-1]
-    bibtex.append('@ONLINE{' + url + ':' + urldata['year'] + ':Online')
+#    link_id = re.sub(r'[\[\]{}:\'",. |-]', '_', urldata['title'])
+    if 'title' not in urldata:
+        title = url
+    else:
+        title = urldata['title']
+    link_id = re.sub(r'[^a-zA-Z0-9]', '_', title)
+    link_id = re.sub(r'_+', '_', link_id)
+
+    bibtex.append('@ONLINE{' + link_id + ':' + urldata['year'] + ':Online' + ',')
     bibtex.append('\tauthor = {},')
-    if 'title' in urldata.keys():
-        bibtex.append('\ttitle = {' + urldata['title'] + '},')
+    title_filtered = re.sub(r'[^a-zA-Z0-9]', ' ', title)
+    title_filtered = re.sub(r'\s+', ' ', title_filtered)
+#    if 'title' in urldata.keys():
+    bibtex.append('\ttitle = {' + title_filtered + '},')
     bibtex.append('\tmonth = jun,')
     bibtex.append('\tyear = {' + urldata['year'] + '},')
     bibtex.append('\turl = {' + urldata['url'] + '},')
     bibtex.append('\turldate = {' + urldata['urldate'] + '}')
     if 'snapshot url' in urldata.keys():
         bibtex[-1] += ','
-        bibtex.append('\tnote = {Internet Archive Wayback Machine: \url{' \
+        bibtex.append('\tnote = {Internet Archive Wayback Machine: \\url{' \
                       + urldata['snapshot url'] + '}, as of ' \
                       + urldata['snapshot date'] + '}')
     bibtex.append('}')
@@ -130,18 +143,18 @@ def getTitle(url):
     from bs4 import BeautifulSoup
 
     try:
-        r = requests.get(url)
+        r = requests.get(url, verify=False)
     except requests.exceptions.MissingSchema:
         try:
             r = requests.get('http://' + url)
         except requests.exceptions.MissingSchema:
             try:
-                r = requests.get('https://' + url)
+                r = requests.get('https://' + url, verify=False)
             except requests.exceptions.MissingSchema:
                 return ''
     if 200 != r.status_code:
         return ''
-    soup = BeautifulSoup(r.text)
+    soup = BeautifulSoup(r.text, 'html.parser')
     t = soup.find_all("title")
     if 1 == len(t):
         return str(t[0]).replace('<title>', '').replace('</title>', '')
@@ -150,35 +163,60 @@ def getTitle(url):
         return str(t[0]).replace('<p class="title">', '').replace('</p>', '')
     return ''
 
-testurl = sys.argv[1]
-if 'http' != testurl[:4]:
-    print("did you forget 'http(s)'?")
-    sys.exit(3)
 
-urldata = {'url': testurl,
-           'urldate': str(datetime.date.today()),
-           'year': str(datetime.date.today().year)}
-wbdata = getWaybackData(sys.argv[1])
-if 0 != len(wbdata):
-    # create ISO timestamp string
-    datestring = wbdata['timestamp'][:4] \
-                 + '-' + wbdata['timestamp'][4:6] \
-                 + '-' + wbdata['timestamp'][6:8] \
-                 + 'T' + wbdata['timestamp'][8:10] \
-                 + ':' + wbdata['timestamp'][10:12] \
-                 + ':' + wbdata['timestamp'][12:14]
-    urldata['snapshot date'] = datestring
-    urldata['snapshot url'] = wbdata['url']
+parser = argparse.ArgumentParser()
+parser.add_argument('--file', help='Read urls from file', type=str)
+parser.add_argument('url', type=str, nargs='?')
+args = parser.parse_args()
 
-if -1 != urldata['url'].find('wikipedia.org'):
-    wpdata = getWikipediaData(urldata['url'])
-    urldata['author'] = wpdata['author']
-    urldata['url'] = wpdata['url']
-    urldata['year'] = wpdata['year']
 
-title = getTitle(urldata['url'])
-if 0 != len(title):
-    urldata['title'] = title.replace(',', '{,}')
+def get_urldata(testurl):
+    urldata = {'url': testurl,
+               'urldate': str(datetime.date.today()),
+               'year': str(datetime.date.today().year)}
+    wbdata = getWaybackData(sys.argv[1])
+    if 0 != len(wbdata):
+        # create ISO timestamp string
+        datestring = wbdata['timestamp'][:4] \
+                     + '-' + wbdata['timestamp'][4:6] \
+                     + '-' + wbdata['timestamp'][6:8] \
+                     + 'T' + wbdata['timestamp'][8:10] \
+                     + ':' + wbdata['timestamp'][10:12] \
+                     + ':' + wbdata['timestamp'][12:14]
+        urldata['snapshot date'] = datestring
+        urldata['snapshot url'] = wbdata['url']
 
-for line in bibtex(urldata):
-    print(line)
+    if -1 != urldata['url'].find('wikipedia.org'):
+        wpdata = getWikipediaData(urldata['url'])
+        urldata['author'] = wpdata['author']
+        urldata['url'] = wpdata['url']
+        urldata['year'] = wpdata['year']
+
+    title = getTitle(urldata['url'])
+    if 0 != len(title):
+        urldata['title'] = title.replace(',', '{,}')
+
+    return urldata
+
+
+if __name__ == '__main__':
+    if args.url:
+        if 'http' != args.url[:4]:
+            print("did you forget 'http(s)'?")
+            sys.exit(3)
+        for line in bibtex(get_urldata(args.url)):
+            print(line)
+
+    elif args.file:
+        with open(args.file) as urls:
+            for url in urls.readlines():
+                url_clean = url.strip()
+                print(f'{url_clean}', file=sys.stderr)
+                try:
+                    for line in bibtex(get_urldata(url_clean)):
+                        print(line)
+                    print()
+                except Exception as e:
+                    print(f'Error: {str(e)}', file=sys.stderr)
+                    traceback.print_exc()
+

@@ -17,6 +17,10 @@ $ ./url2bibtex.py http://www.github.com/
 }
 ```
 
+```
+$ ./url2bibtex.py --file=links.txt > bibliography.bib
+```
+
 # references
 * [BibTeX: How to cite a website](http://nschloe.blogspot.de/2009/06/bibtex-how-to-cite-website_21.html)
 * [Requests: HTTP for Humans](http://docs.python-requests.org/en/latest/)
